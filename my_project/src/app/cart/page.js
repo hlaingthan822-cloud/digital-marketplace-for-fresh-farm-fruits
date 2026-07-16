@@ -8,101 +8,28 @@ import Link from "next/link";
 export default function CartPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
+  const [recommendedFruits, setRecommendedFruits] = useState([]);
 
-  // မှာယူသူအချက်အလက် State
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [city, setCity] = useState("yangon"); // default yangon
+  const [city, setCity] = useState("yangon");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // default Cash On Delivery
-
-  // အကြံပြုအသီးအနှံ (၉) မျိုး
-  const recommendedFruits = [
-    {
-      id: "1",
-      name: "ပြင်ဦးလွင် စတော်ဘယ်ရီ",
-      price: 5000,
-      farmer: "ဒေါ်လှ",
-      image:
-        "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&q=80",
-    },
-    {
-      id: "2",
-      name: "ရှမ်းရိုးရာ လိမ္မော်သီး",
-      price: 3000,
-      farmer: "စိုင်းဆိုင်",
-      image:
-        "https://images.unsplash.com/photo-1547514701-42782101795e?w=500&q=80",
-    },
-    {
-      id: "3",
-      name: "အောင်ပန်း အာလူး",
-      price: 1500,
-      farmer: "ဦးလှ",
-      image:
-        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80",
-    },
-    {
-      id: "4",
-      name: "မော်လမြိုင် ကျွဲကောသီး",
-      price: 4500,
-      farmer: "ဒေါ်နီ",
-      image:
-        "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=500&q=80",
-    },
-    {
-      id: "5",
-      name: "ရွှေတောင် ထောပတ်သီး",
-      price: 3500,
-      farmer: "ကိုမင်း",
-      image:
-        "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=500&q=80",
-    },
-    {
-      id: "6",
-      name: "ကျောက်ဆည် သရက်သီး",
-      price: 6000,
-      farmer: "ဦးဘ",
-      image:
-        "https://images.unsplash.com/photo-1553279768-865429fa0078?w=500&q=80",
-    },
-    {
-      id: "7",
-      name: "မှော်ဘီ သင်္ဘောသီး",
-      price: 2000,
-      farmer: "ဦးတင်",
-      image:
-        "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=500&q=80",
-    },
-    {
-      id: "8",
-      name: "သီပေါ နာနတ်သီး",
-      price: 2500,
-      farmer: "နန်းမွေ",
-      image:
-        "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=500&q=80",
-    },
-    {
-      id: "9",
-      name: "ပြင်ဦးလွင် ပန်းသီး",
-      price: 4000,
-      farmer: "ဒေါ်မြ",
-      image:
-        "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&q=80",
-    },
-  ];
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCartItems(savedCart);
+    setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"));
+
+    // Database မှ အကြံပြုသစ်သီးများ ဆွဲယူခြင်း
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setRecommendedFruits(data))
+      .catch((err) => console.error(err));
   }, []);
 
-  // ခြင်းတောင်းထဲက ပစ္စည်းပမာဏ အတိုးအလျော့ ပြုလုပ်ခြင်း
   const updateQuantity = (id, change) => {
     const updated = cartItems.map((item) => {
       if (item.id === id) {
-        const newQty = Math.max(1, item.quantity + change);
-        return { ...item, quantity: newQty };
+        return { ...item, quantity: Math.max(1, item.quantity + change) };
       }
       return item;
     });
@@ -110,7 +37,6 @@ export default function CartPage() {
     localStorage.setItem("cart", JSON.stringify(updated));
   };
 
-  // ဘေးမှ အကြံပြုအသီးများအား ချက်ချင်းထည့်သွင်းခြင်း
   const handleQuickAdd = (fruit) => {
     let cart = [...cartItems];
     const existingIndex = cart.findIndex((item) => item.id === fruit.id);
@@ -123,58 +49,73 @@ export default function CartPage() {
     localStorage.setItem("cart", JSON.stringify(cart));
   };
 
-  // စုစုပေါင်း ဈေးနှုန်း တွက်ချက်ခြင်း
   const totalPrice = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
 
-  // မှာယူမှု အတည်ပြုခြင်း
-  const handleConfirmOrder = (e) => {
+  // မှာယူမှုကို Database သို့ တင်သွင်းသိမ်းဆည်းခြင်း
+  const handleConfirmOrder = async (e) => {
     e.preventDefault();
     if (!customerName || !customerPhone || !customerAddress) {
-      alert("⚠️ မှာယူသူအချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်စွက်ပေးပါဦး ခင်ဗျာ!");
+      alert("⚠️ မှာယူသူအချက်အလက်များကို ဖြည့်စွက်ပေးပါဦး ခင်ဗျာ!");
       return;
     }
 
-    const payMsg =
-      paymentMethod === "cod"
-        ? "📦 အိမ်ရောက်ငွေချေစနစ်ဖြင့် မှာယူထားပါသည်။"
-        : "🏦 မိုဘိုင်းဘဏ်စနစ်ဖြင့် လွှဲပေးရမည်ဖြစ်ပြီး၊ ငွေလွှဲပြေစာအား ပေးပို့ပေးရန် လိုအပ်ပါသည်။";
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName,
+          customerPhone,
+          city,
+          paymentMethod,
+          customerAddress,
+          totalPrice,
+          items: cartItems,
+        }),
+      });
 
-    alert(
-      `🎉 မှာယူမှု အောင်မြင်ပါသည် ခင်ဗျာ!\n\nစုစုပေါင်း ကျသင့်ငွေ - ${totalPrice} ကျပ်\n${payMsg}`,
-    );
-
-    // Clear Cart
-    localStorage.removeItem("cart");
-    setCartItems([]);
-    router.push("/");
-  };
-  // မြို့ပေါ်မူတည်၍ ငွေချေစနစ်ပြောင်းလဲခြင်း
-  const handleCityChange = (e) => {
-    const selectedCity = e.target.value;
-    setCity(selectedCity);
-    if (selectedCity === "yangon" || selectedCity === "mandalay") {
-      setPaymentMethod("cod"); // ရန်ကုန်နှင့် မန္တလေးဆိုလျှင် အိမ်ရောက်ငွေချေ ရွေးခွင့်ပြုသည်
-    } else {
-      setPaymentMethod("bank"); // အခြားမြို့များဆိုလျှင် ဘဏ်စနစ်သာရမည်
+      if (response.ok) {
+        alert(
+          "🎉 မှာယူမှုကို တကယ့် Database ထဲသို့ အောင်မြင်စွာ သိမ်းဆည်းလိုက်ပါပြီ ခင်ဗျာ!",
+        );
+        localStorage.removeItem("cart");
+        setCartItems([]);
+        router.push("/");
+      } else {
+        alert("Failed to submit order to database.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error processing order.");
     }
   };
 
+  const handleCityChange = (e) => {
+    const selectedCity = e.target.value;
+    setCity(selectedCity);
+    setPaymentMethod(
+      selectedCity === "yangon" || selectedCity === "mandalay" ? "cod" : "bank",
+    );
+  };
+
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "15px" }}>
       <header
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "15px 0",
+          padding: "10px 0",
           borderBottom: "1px solid #e2e8f0",
-          marginBottom: "30px",
+          marginBottom: "20px",
+          flexWrap: "wrap",
+          gap: "10px",
         }}
       >
-        <h1 style={{ color: "#2e7d32", margin: 0, fontSize: "1.5rem" }}>
+        <h1 style={{ color: "#2e7d32", margin: 0, fontSize: "1.3rem" }}>
           🛒 ခြင်းတောင်းစာမျက်နှာ
         </h1>
         <Link
@@ -184,8 +125,9 @@ export default function CartPage() {
             color: "#4a5568",
             fontWeight: "bold",
             border: "1px solid #cbd5e0",
-            padding: "8px 16px",
+            padding: "6px 12px",
             borderRadius: "8px",
+            fontSize: "0.8rem",
           }}
         >
           🏠 ဈေးဝယ်ရန် ပြန်သွားမည်
@@ -193,18 +135,18 @@ export default function CartPage() {
       </header>
 
       {cartItems.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "50px 0" }}>
-          <h2>ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ 🛒</h2>
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <h3>ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ 🛒</h3>
           <Link
             href="/"
             style={{
               backgroundColor: "#2e7d32",
               color: "white",
-              padding: "12px 24px",
+              padding: "10px 20px",
               borderRadius: "8px",
               textDecoration: "none",
               display: "inline-block",
-              marginTop: "15px",
+              marginTop: "10px",
             }}
           >
             ဝယ်ယူရန် သွားမည်
@@ -214,25 +156,26 @@ export default function CartPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "3fr 2fr",
-            gap: "30px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "20px",
           }}
         >
-          {/* ဘယ်ဘက်ခြမ်း: ရွေးထားသောအသီးများ (အတိုးအလျော့လုပ်နိုင်) */}
           <div>
             <div
               style={{
                 border: "1px solid #e2e8f0",
-                padding: "20px",
+                padding: "15px",
                 borderRadius: "12px",
-                marginBottom: "30px",
+                marginBottom: "25px",
+                backgroundColor: "#fff",
               }}
             >
               <h3
                 style={{
                   marginTop: 0,
+                  fontSize: "1.1rem",
                   borderBottom: "2px solid #e2e8f0",
-                  paddingBottom: "10px",
+                  paddingBottom: "8px",
                 }}
               >
                 ရွေးချယ်ထားသော အသီးအနှံများ
@@ -242,8 +185,8 @@ export default function CartPage() {
                   key={item.id}
                   style={{
                     display: "flex",
-                    gap: "15px",
-                    padding: "15px 0",
+                    gap: "10px",
+                    padding: "12px 0",
                     borderBottom: "1px solid #edf2f7",
                     alignItems: "center",
                   }}
@@ -252,20 +195,26 @@ export default function CartPage() {
                     src={item.image}
                     alt={item.name}
                     style={{
-                      width: "60px",
-                      height: "60px",
+                      width: "50px",
+                      height: "50px",
                       borderRadius: "8px",
                       objectFit: "cover",
                     }}
                   />
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ margin: "0 0 5px 0" }}>{item.name}</h4>
-                    <span style={{ color: "#e65100", fontWeight: "bold" }}>
+                    <h4 style={{ margin: "0 0 3px 0", fontSize: "0.95rem" }}>
+                      {item.name}
+                    </h4>
+                    <span
+                      style={{
+                        color: "#e65100",
+                        fontWeight: "bold",
+                        fontSize: "0.9rem",
+                      }}
+                    >
                       {item.price * item.quantity} ကျပ်
                     </span>
                   </div>
-
-                  {/* အတိုးအလျော့ခလုတ် */}
                   <div
                     style={{
                       display: "flex",
@@ -278,7 +227,7 @@ export default function CartPage() {
                     <button
                       onClick={() => updateQuantity(item.id, -1)}
                       style={{
-                        padding: "5px 10px",
+                        padding: "3px 8px",
                         border: "none",
                         backgroundColor: "#edf2f7",
                         cursor: "pointer",
@@ -288,10 +237,11 @@ export default function CartPage() {
                     </button>
                     <span
                       style={{
-                        padding: "5px 10px",
-                        minWidth: "25px",
+                        padding: "3px 8px",
+                        minWidth: "20px",
                         textAlign: "center",
                         fontWeight: "bold",
+                        fontSize: "0.85rem",
                       }}
                     >
                       {item.quantity}
@@ -299,7 +249,7 @@ export default function CartPage() {
                     <button
                       onClick={() => updateQuantity(item.id, 1)}
                       style={{
-                        padding: "5px 10px",
+                        padding: "3px 8px",
                         border: "none",
                         backgroundColor: "#edf2f7",
                         cursor: "pointer",
@@ -314,9 +264,9 @@ export default function CartPage() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginTop: "20px",
+                  marginTop: "15px",
                   fontWeight: "bold",
-                  fontSize: "1.2rem",
+                  fontSize: "1rem",
                 }}
               >
                 <span>စုစုပေါင်း ကျသင့်ငွေ</span>
@@ -324,27 +274,27 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* ဘေးမှ တခြားထပ်မှာချင်သည့် အသီးအနှံ (၉) မျိုးအကြံပြုချက် */}
             <div>
-              <h3 style={{ marginBottom: "15px" }}>
+              <h3 style={{ marginBottom: "10px", fontSize: "1.1rem" }}>
                 တခြားထပ်မံမှာယူနိုင်သော အသီးအနှံများ 🍎
               </h3>
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                  gap: "15px",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+                  gap: "10px",
                 }}
               >
-                {recommendedFruits.map((fruit) => (
+                {recommendedFruits.slice(0, 9).map((fruit) => (
                   <div
                     key={fruit.id}
                     style={{
                       border: "1px solid #e2e8f0",
                       borderRadius: "8px",
                       overflow: "hidden",
-                      padding: "10px",
+                      padding: "8px",
                       textAlign: "center",
+                      backgroundColor: "#fff",
                     }}
                   >
                     <img
@@ -352,18 +302,26 @@ export default function CartPage() {
                       alt={fruit.name}
                       style={{
                         width: "100%",
-                        height: "100px",
+                        height: "80px",
                         objectFit: "cover",
                         borderRadius: "6px",
                       }}
                     />
-                    <h5 style={{ margin: "8px 0 4px 0", fontSize: "0.9rem" }}>
+                    <h5
+                      style={{
+                        margin: "5px 0 2px 0",
+                        fontSize: "0.8rem",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {fruit.name}
                     </h5>
                     <p
                       style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "0.8rem",
+                        margin: "0 0 6px 0",
+                        fontSize: "0.75rem",
                         color: "#e65100",
                         fontWeight: "bold",
                       }}
@@ -377,9 +335,9 @@ export default function CartPage() {
                         backgroundColor: "#2e7d32",
                         color: "white",
                         border: "none",
-                        padding: "6px",
+                        padding: "4px",
                         borderRadius: "6px",
-                        fontSize: "0.8rem",
+                        fontSize: "0.75rem",
                         cursor: "pointer",
                       }}
                     >
@@ -391,31 +349,31 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* ညာဘက်ခြမ်း: မှာယူသူအချက်အလက်နှင့် ငွေချေစနစ်ရွေးချယ်ခြင်း */}
           <div
             style={{
               backgroundColor: "#f7fafc",
               border: "1px solid #e2e8f0",
-              padding: "25px",
+              padding: "20px",
               borderRadius: "12px",
               height: "fit-content",
             }}
           >
-            <h3 style={{ marginTop: 0, marginBottom: "20px" }}>
+            <h3
+              style={{ marginTop: 0, marginBottom: "15px", fontSize: "1.1rem" }}
+            >
               မှာယူမှု အတည်ပြုရန်
             </h3>
-
             <form
               onSubmit={handleConfirmOrder}
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
             >
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    marginBottom: "5px",
+                    marginBottom: "4px",
                   }}
                 >
                   အမည်
@@ -427,21 +385,21 @@ export default function CartPage() {
                   onChange={(e) => setCustomerName(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "10px",
+                    padding: "8px",
                     border: "1px solid #cbd5e0",
                     borderRadius: "8px",
+                    fontSize: "0.9rem",
                   }}
                   required
                 />
               </div>
-
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    marginBottom: "5px",
+                    marginBottom: "4px",
                   }}
                 >
                   ဖုန်းနံပါတ်
@@ -453,21 +411,21 @@ export default function CartPage() {
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "10px",
+                    padding: "8px",
                     border: "1px solid #cbd5e0",
                     borderRadius: "8px",
+                    fontSize: "0.9rem",
                   }}
                   required
                 />
               </div>
-
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    marginBottom: "5px",
+                    marginBottom: "4px",
                   }}
                 >
                   မြို့နယ်ရွေးချယ်ပါ
@@ -477,10 +435,11 @@ export default function CartPage() {
                   onChange={handleCityChange}
                   style={{
                     width: "100%",
-                    padding: "10px",
+                    padding: "8px",
                     border: "1px solid #cbd5e0",
                     borderRadius: "8px",
                     backgroundColor: "white",
+                    fontSize: "0.9rem",
                   }}
                 >
                   <option value="yangon">
@@ -492,14 +451,13 @@ export default function CartPage() {
                   <option value="other">အခြားမြို့များ (ဘဏ်လွှဲဖြင့်သာ)</option>
                 </select>
               </div>
-
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    marginBottom: "5px",
+                    marginBottom: "4px",
                   }}
                 >
                   ငွေချေစနစ်
@@ -508,7 +466,8 @@ export default function CartPage() {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "8px",
+                    gap: "6px",
+                    fontSize: "0.85rem",
                   }}
                 >
                   {(city === "yangon" || city === "mandalay") && (
@@ -516,7 +475,7 @@ export default function CartPage() {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
+                        gap: "6px",
                         cursor: "pointer",
                       }}
                     >
@@ -527,14 +486,14 @@ export default function CartPage() {
                         checked={paymentMethod === "cod"}
                         onChange={() => setPaymentMethod("cod")}
                       />
-                      💵 အိမ်ရောက်မှ ငွေချေမည် (Cash On Delivery)
+                      💵 အိမ်ရောက်မှ ငွေချေမည်
                     </label>
                   )}
                   <label
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
+                      gap: "6px",
                       cursor: "pointer",
                     }}
                   >
@@ -545,7 +504,7 @@ export default function CartPage() {
                       checked={paymentMethod === "bank"}
                       onChange={() => setPaymentMethod("bank")}
                     />
-                    🏦 မိုဘိုင်းဘဏ်စနစ် (KPay, WavePay)
+                    🏦 မိုဘိုင်းဘဏ်စနစ် (KPay/Wave)
                   </label>
                 </div>
               </div>
@@ -553,29 +512,29 @@ export default function CartPage() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    marginBottom: "5px",
+                    marginBottom: "4px",
                   }}
                 >
                   ပို့ဆောင်ပေးရမည့် လိပ်စာအပြည့်အစုံ
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="အမှတ်၊ လမ်း၊ ရပ်ကွက်"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "10px",
+                    padding: "8px",
                     border: "1px solid #cbd5e0",
                     borderRadius: "8px",
                     fontFamily: "inherit",
+                    fontSize: "0.9rem",
                   }}
                   required
                 />
               </div>
-
               <button
                 type="submit"
                 style={{
@@ -583,12 +542,12 @@ export default function CartPage() {
                   backgroundColor: "#2e7d32",
                   color: "white",
                   border: "none",
-                  padding: "14px",
+                  padding: "12px",
                   borderRadius: "8px",
                   fontWeight: "bold",
                   cursor: "pointer",
-                  fontSize: "1rem",
-                  marginTop: "10px",
+                  fontSize: "0.9rem",
+                  marginTop: "5px",
                 }}
               >
                 မှာယူမှုကို အတည်ပြုမည် 🛍️

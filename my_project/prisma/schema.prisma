@@ -1,0 +1,49 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  
+}
+
+// ၁။ အကောင့်များအတွက် Table
+model User {
+  id       String    @id @default(uuid())
+  email    String    @unique
+  password String
+  role     String    // "farmer" သို့မဟုတ် "customer"
+  products Product[] // တောင်သူတင်ထားသော သီးနှံများ
+  orders   Order[]   // ဝယ်ယူသူ မှာယူထားသော စာရင်းများ
+  createdAt DateTime @default(now())
+}
+
+// ၂။ သီးနှံများအတွက် Table
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Int
+  farmerName  String
+  image       String
+  description String?
+  userId      String?  // တောင်သူ ID နဲ့ ချိတ်ရန်
+  user        User?    @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// ၃။ မှာယူမှုများအတွက် Table
+model Order {
+  id              String   @id @default(uuid())
+  customerName    String
+  customerPhone   String
+  city            String
+  paymentMethod   String
+  customerAddress String
+  totalPrice      Int
+  items           String   // မှာယူထားသော ပစ္စည်းများကို JSON string အဖြစ်သိမ်းမည်
+  userId          String?  // မှာယူသူ ID နဲ့ ချိတ်ရန်
+  user            User?    @relation(fields: [userId], references: [id])
+  createdAt       DateTime @default(now())
+}
