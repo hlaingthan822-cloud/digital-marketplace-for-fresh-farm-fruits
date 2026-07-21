@@ -117,6 +117,7 @@ export default function ProductDetailPage({ params: paramsPromise }) {
     } else {
       cart.push({ ...fruit, quantity });
     }
+    
 
     localStorage.setItem("cart", JSON.stringify(cart));
     alert(

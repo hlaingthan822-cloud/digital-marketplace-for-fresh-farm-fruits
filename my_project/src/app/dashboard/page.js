@@ -126,6 +126,7 @@ export default function DashboardPage() {
     setImage(null);
   };
 
+  
   return (
     <div
       style={{

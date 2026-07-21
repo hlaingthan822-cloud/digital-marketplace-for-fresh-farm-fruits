@@ -18,6 +18,7 @@ export default function LoginPage() {
       return;
     }
 
+    
     // Role နှင့် Login အခြေအနေကို LocalStorage ထဲတွင် သိမ်းဆည်းခြင်း
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("userRole", role);

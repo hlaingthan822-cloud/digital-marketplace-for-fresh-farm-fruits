@@ -121,6 +121,7 @@ export default function HomePage() {
     alert(`🎉 ${fruit.name} (၁) ပိဿာကို ခြင်းတောင်းထဲ ထည့်ပြီးပါပြီ!`);
   };
 
+  
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userRole");
