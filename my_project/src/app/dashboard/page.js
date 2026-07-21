@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const [farmer, setFarmer] = useState("");
   const [image, setImage] = useState(null); // File Upload သိမ်းဆည်းရန် State
 
-  // ပင်မစာမျက်နှာနဲ့ ကိုက်ညီမယ့် သစ်သီး (၉) မျိုးစာရင်း
+  // သစ်သီး (၉) မျိုးစာရင်း
   const [products, setProducts] = useState([
     {
       id: "1",
@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Laptop ထဲက ပုံဖိုင်ကို Browser မှာ မြင်တွေ့ရအောင် URL အဖြစ် ပြောင်းလဲပေးခြင်း
       setImage(URL.createObjectURL(file));
     }
   };
@@ -102,6 +103,7 @@ export default function DashboardPage() {
       return;
     }
 
+    // တကယ်လို့ ပုံမတင်ထားရင် default ပုံ ထည့်ပေးမည်
     const finalImage =
       image ||
       "https://images.unsplash.com/photo-1610832958506-ee56336191d1?w=500&q=80";
@@ -133,13 +135,13 @@ export default function DashboardPage() {
         fontFamily: "inherit",
       }}
     >
-      {/* 🌟 ဤနေရာတွင် "ပင်မစာမျက်နှာသို့ ပြန်ရန်" ခလုတ်ပါဝင်သော Header အသစ်ကို ထည့်သွင်းထားပါသည် */}
+      {/* အပေါ်ပိုင်း Navbar */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "30px",
+          marginBottom: "40px",
           borderBottom: "1px solid #e2e8f0",
           paddingBottom: "20px",
         }}
@@ -150,18 +152,12 @@ export default function DashboardPage() {
         <Link
           href="/"
           style={{
-            color: "#4a5568",
+            color: "#2e7d32",
             textDecoration: "none",
             fontWeight: "bold",
-            border: "1px solid #cbd5e0",
-            padding: "8px 16px",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
           }}
         >
-          🏠 ပင်မစာမျက်နှာသို့ ပြန်ရန်
+          ← ပင်မစာမျက်နှာသို့
         </Link>
       </div>
       <div

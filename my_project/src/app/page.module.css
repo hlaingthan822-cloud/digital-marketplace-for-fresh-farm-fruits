@@ -1,142 +1,384 @@
-.page {
-  --background: #fafafa;
-  --foreground: #fff;
-
-  --text-primary: #000;
-  --text-secondary: #666;
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-  --button-secondary-border: #ebebeb;
-
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-geist-sans);
-  background-color: var(--background);
+/* ကမ္ဘာလုံးဆိုင်ရာ သတ်မှတ်ချက်များ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.main {
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7fafc;
+  color: #2d3748;
+  padding: 40px 20px;
+}
+
+/* Header အပိုင်း */
+header {
+  max-w: 1000px;
+  margin: 0 auto 40px auto;
   display: flex;
-  flex: 1;
-  width: 100%;
-  max-width: 800px;
-  flex-direction: column;
-  align-items: flex-start;
   justify-content: space-between;
-  background-color: var(--foreground);
-  padding: 120px 60px;
+  align-items: center;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 20px;
 }
 
-.intro {
+header h1 {
+  color: #2e7d32;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+header div a {
+  text-decoration: none;
+  color: #4a5568;
+  margin-left: 20px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+header div a:hover {
+  color: #2e7d32;
+}
+
+header div a:last-child {
+  background-color: #2e7d32;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+header div a:last-child:hover {
+  background-color: #1b5e20;
+}
+
+/* Hero Section */
+.max-w-5xl.mx-auto.text-center {
+  max-width: 1000px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.max-w-5xl.mx-auto.text-center h2 {
+  font-size: 2.5rem;
+  color: #1a5235;
+  margin-bottom: 10px;
+}
+
+.max-w-5xl.mx-auto.text-center p {
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+/* Product Grid (၃ ကော်လံခွဲခြင်း) */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Product Card တစ်ခုချင်းစီ */
+.border.rounded-xl {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.border.rounded-xl:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* သစ်သီးပုံပြရန်နေရာ */
+.bg-green-50 {
+  background-color: #e8f5e9;
+  height: 160px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2e7d32;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* စာသားများနှင့် ဈေးနှုန်း */
+.text-green-800 {
+  color: #1b5e20;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+
+.text-gray-600 {
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.text-orange-600 {
+  color: #e65100;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 15px 0;
+}
+
+/* ခလုတ်များ (Flex alignment) */
+.flex.gap-2 {
+  display: flex;
+  gap: 12px;
+}
+
+.flex.gap-2 a, .flex.gap-2 button {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+/* အသေးစိတ်ကြည့်ရန် ခလုတ် */
+.flex.gap-2 a {
+  border: 2px solid #2e7d32;
+  color: #2e7d32;
+  background: transparent;
+}
+
+.flex.gap-2 a:hover {
+  background-color: #e8f5e9;
+}
+
+/* ဝယ်ယူမည် ခလုတ် */
+.flex.gap-2 button {
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+}
+
+.flex.gap-2 button:hover {
+  background-color: #1b5e20;
+}
+/* Farmer Dashboard သီးသန့် Layout ဆင်ခြင်း */
+.max-w-5xl {
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+/* ခေါင်းစဉ်ပိုင်း */
+.flex.justify-between.items-center {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Dashboard Grid ခွဲခြင်း (ဖောင်က တစ်ဖက်၊ စာရင်းက တစ်ဖက်) */
+.grid-cols-1.md\:grid-cols-3 {
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* ဖောင်ကို ၁ ဆ၊ စာရင်းကို ၂ ဆ နေရာပေးခြင်း */
+  gap: 30px;
+  align-items: start;
+}
+
+/* သီးနှံအသစ်တင်သည့် Form Box */
+.bg-white.p-6.rounded-2xl.border {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.bg-white.p-6.rounded-2xl.border h2 {
+  color: #2e7d32;
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e8f5e9;
+  padding-bottom: 10px;
+}
+
+/* Input ကွက်တိများကို လှပအောင် ပြင်ဆင်ခြင်း */
+.space-y-3 input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 15px; /* Input တစ်ခုချင်းစီကြား ခြားရန် */
+  transition: border-color 0.2s;
+  display: block;
+}
+
+.space-y-3 input:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+/* တင်သွင်းမည် ခလုတ် */
+.space-y-3 button {
+  width: 100%;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.space-y-3 button:hover {
+  background-color: #1b5e20;
+}
+
+/* ရောင်းချနေဆဲ သီးနှံများစာရင်း Box */
+.divide-y {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 24px;
+  gap: 12px;
 }
 
-.intro h1 {
-  max-width: 320px;
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 48px;
-  letter-spacing: -2.4px;
-  text-wrap: balance;
-  color: var(--text-primary);
-}
-
-.intro p {
-  max-width: 440px;
-  font-size: 18px;
-  line-height: 32px;
-  text-wrap: balance;
-  color: var(--text-secondary);
-}
-
-.intro a {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.ctas {
+.py-3.flex.justify-between.items-center {
   display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 440px;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.ctas a {
-  display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 128px;
-  border: 1px solid transparent;
-  transition: 0.2s;
-  cursor: pointer;
-  width: fit-content;
+  background: #f8fafc;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid #edf2f7;
+}
+
+.py-3.flex.justify-between.items-center span:first-child {
   font-weight: 500;
+  color: #2d3748;
 }
 
-a.primary {
-  background: var(--text-primary);
-  color: var(--background);
-  gap: 8px;
+/* Status Badge လေးများ (ပစ္စည်းရှိ/အရောင်းသွက်) */
+.text-xs.bg-green-100 {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
-a.secondary {
-  border-color: var(--button-secondary-border);
+.text-xs.bg-gray-100 {
+  background-color: #edf2f7;
+  color: #4a5568;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+/* Login Page Layout ပြင်ဆင်ခြင်း */
+.min-h-screen.flex.items-center.justify-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
-  }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
-  }
+.max-w-md.w-full.bg-white {
+  background: white;
+  max-width: 420px;
+  width: 100%;
+  padding: 40px 30px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
-@media (max-width: 600px) {
-  .main {
-    padding: 48px 24px;
-  }
-
-  .intro {
-    gap: 16px;
-  }
-
-  .intro h1 {
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -1.92px;
-  }
+.max-w-md.w-full.bg-white h1 {
+  color: #1b5e20;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
-  }
+.max-w-md.w-full.bg-white p.text-center {
+  color: #718096;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 24px;
+}
 
-  .page {
-    --background: #000;
-    --foreground: #000;
+/* Login Form Inputs */
+form.space-y-4 div {
+  margin-bottom: 20px;
+}
 
-    --text-primary: #ededed;
-    --text-secondary: #999;
+form.space-y-4 label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
 
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-    --button-secondary-border: #1a1a1a;
-  }
+form.space-y-4 input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #cbd5e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+form.space-y-4 input:focus {
+  outline: none;
+  border-color: #2e7d32;
+}
+
+/* Login Button */
+form.space-y-4 button {
+  width: 100%;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+form.space-y-4 button:hover {
+  background-color: #1b5e20;
+}
+
+/* Product Card အတွင်း ပုံစတိုင်အသစ် */
+.fruit-img-box {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f7fafc;
+}
+
+.fruit-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
