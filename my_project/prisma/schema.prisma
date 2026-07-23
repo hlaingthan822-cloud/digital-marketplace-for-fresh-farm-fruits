@@ -7,58 +7,41 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      String   @default("customer")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String
+  name     String
+  role     String  @default("CUSTOMER") // "FARMER" သို့မဟုတ် "CUSTOMER"
   orders   Order[]
-  products Product[]
 }
 
 model Product {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   name      String
   price     Int
   farmer    String
   image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  farmerId   String?
-  farmerUser User?   @relation(fields: [farmerId], references: [id])
-
-  orderItems OrderItem[]
+  createdAt DateTime    @default(now())
+  items     OrderItem[]
 }
 
 model Order {
-  id              String   @id @default(uuid())
-  customerName    String
-  customerPhone   String
-  city            String
-  customerAddress String
-  paymentMethod   String
-  totalPrice      Int
-  status          String   @default("PENDING")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  orderItems OrderItem[]
+  id        String      @id @default(uuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  name      String?     // ? ထည့်ပြီး optional ဖြစ်အောင် လုပ်သည်
+  phone     String?
+  address   String?
+  total     Int         @default(0) // default value ပေးထားသည်
+  createdAt DateTime    @default(now())
+  items     OrderItem[]
 }
-
 model OrderItem {
-  id       String @id @default(uuid())
-  quantity Int
-  price    Int
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
   product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Int
 }

@@ -7,20 +7,45 @@ import { useRouter } from "next/navigation";
 export default function CartPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Form States
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [city, setCity] = useState("Yangon");
-  const [customerAddress, setCustomerAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  // Form Field State များ
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCartItems(savedCart);
+    // 1. LocalStorage မှ Cart Data ယူခြင်း
+    const storedCart = localStorage.getItem("cart");
+    if (storedCart) {
+      try {
+        const items = JSON.parse(storedCart);
+        // quantity မပါပါက default 1 သတ်မှတ်ပေးခြင်း
+        const formattedItems = items.map((item) => ({
+          ...item,
+          quantity: item.quantity || 1,
+        }));
+        setCartItems(formattedItems);
+      } catch (e) {
+        console.error("Cart items parse error:", e);
+      }
+    }
+
+    // 2. LocalStorage မှ Login ဝင်ထားသော User Data ယူခြင်း
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setName(userData.name || ""); // အမည်ကို အလိုအလျောက် ထည့်ပေးခြင်း
+      } catch (e) {
+        console.error("User parse error:", e);
+      }
+    }
   }, []);
 
+  // အရေအတွက် ပြောင်းလဲရန် Function
   const updateQuantity = (id, delta) => {
     const updated = cartItems
       .map((item) => {
@@ -36,177 +61,169 @@ export default function CartPage() {
     localStorage.setItem("cart", JSON.stringify(updated));
   };
 
+  // ပစ္စည်း ဖျက်ရန် Function
   const removeItem = (id) => {
     const updated = cartItems.filter((item) => item.id !== id);
     setCartItems(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
   };
 
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // စုစုပေါင်း ကျသင့်ငွေ တွက်ချက်ရန်
+  const calculateTotal = () => {
+    return cartItems.reduce(
+      (sum, item) => sum + parseInt(item.price) * item.quantity,
+      0
+    );
+  };
 
-  // 🚀 Database (API) သို့ Order တင်သည့် Function
-  const handleConfirmOrder = async (e) => {
+  // Order တင်သည့် Function
+  const handleOrderSubmit = async (e) => {
     e.preventDefault();
 
     if (cartItems.length === 0) {
-      alert("ဝယ်ယူမည့် သီးနှံ မရှိသေးပါခင်ဗျာ!");
+      alert("⚠️ ခြင်းတောင်းထဲတွင် သီးနှံများ မရှိသေးပါ!");
       return;
     }
 
-    setIsSubmitting(true);
+    setLoading(true);
+
+    const orderData = {
+      name,
+      phone,
+      address,
+      total: calculateTotal(),
+      items: cartItems,
+      userId: user ? user.id : null, // Login ဝင်ထားပါက User ID ပို့မည်
+    };
 
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName,
-          customerPhone,
-          city,
-          customerAddress,
-          paymentMethod,
-          totalPrice,
-          cartItems,
-        }),
+        body: JSON.stringify(orderData),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        alert("🎉 မှာယူမှု အောင်မြင်ပြီး Database ထဲသို့ ရောက်ရှိသွားပါပြီ ခင်ဗျာ!");
-        localStorage.removeItem("cart");
+        alert("🎉 အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!");
+        localStorage.removeItem("cart"); // Cart ရှင်းမည်
         setCartItems([]);
-        router.push("/");
+
+        // Login ဝင်ထားသူဖြစ်ပါက History Page သို့ ပို့မည်၊ မဟုတ်ပါက Home သို့ ပို့မည်
+        if (user) {
+          router.push("/history");
+        } else {
+          router.push("/");
+        }
       } else {
-        const errorData = await res.json();
-        alert("Order တင်ရာတွင် အမှားရှိပါသည်: " + errorData.error);
+        alert("❌ အော်ဒါတင်ရာတွင် အမှားရှိနေပါသည်: " + (data.error || ""));
       }
-    } catch (err) {
-      console.error(err);
-      alert("Server နှင့် ချိတ်ဆက်၍ မရပါခင်ဗျာ။");
+    } catch (error) {
+      console.error("Order Submit Error:", error);
+      alert("❌ Server နှင့် ချိတ်ဆက်၍ မရပါခင်ဗျာ။");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif" }}>
-      <header style={{ marginBottom: "20px" }}>
+    <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px", fontFamily: "sans-serif" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h2>🛒 ရွေးချယ်ထားသော သီးနှံများ (Cart)</h2>
         <Link href="/" style={{ textDecoration: "none", color: "#2e7d32", fontWeight: "bold" }}>
-          ← ပင်မစာမျက်နှာသို့ ပြန်သွားမည်
+          ← စေးဝယ်ထွက်ရန် ပင်မစာမျက်နှာသို့
         </Link>
-        <h1 style={{ color: "#2e7d32", marginTop: "10px" }}>🛒 သင်၏ ခြင်းတောင်း (Cart)</h1>
-      </header>
+      </div>
 
       {cartItems.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "50px", border: "2px dashed #ccc", borderRadius: "10px" }}>
-          <h2>ခြင်းတောင်းထဲတွင် မည်သည့်သီးနှံမျှ မရှိသေးပါ။</h2>
-          <Link href="/" style={{ display: "inline-block", marginTop: "10px", backgroundColor: "#2e7d32", color: "white", padding: "10px 20px", borderRadius: "6px", textDecoration: "none" }}>
-            သီးနှံများ သွားရောက်ကြည့်ရှုမည်
-          </Link>
+        <div style={{ textAlign: "center", padding: "50px", border: "1px dashed #ccc", borderRadius: "8px" }}>
+          <p>ခြင်းတောင်းထဲတွင် မည်သည့် သီးနှံမှ မရှိသေးပါ။</p>
+          <Link href="/" style={{ color: "#2e7d32", fontWeight: "bold" }}>သီးနှံများ သွားရောက်ကြည့်ရှုမည်</Link>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px" }}>
-          {/* ဘယ်ဘက် - Cart Items List */}
+          {/* ဘယ်ဘက် - ရွေးချယ်ထားသော အသီးအနှံများ စာရင်း */}
           <div>
-            <h3>ရွေးချယ်ထားသော သီးနှံများ</h3>
-            {cartItems.map((item) => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #eee", paddingBottom: "10px", marginBottom: "10px" }}>
-                <img src={item.image || "https://via.placeholder.com/60"} alt={item.name} style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "6px" }} />
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: "0 0 5px 0" }}>{item.name}</h4>
-                  <p style={{ margin: 0, color: "#e65100", fontWeight: "bold" }}>{item.price.toLocaleString()} ကျပ်</p>
+            <h3>သီးနှံစာရင်း</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              {cartItems.map((item) => (
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #ddd", padding: "10px", borderRadius: "8px" }}>
+                  <div>
+                    <h4 style={{ margin: "0 0 5px 0" }}>{item.name}</h4>
+                    <span style={{ color: "#2e7d32", fontWeight: "bold" }}>{item.price} ကျပ်</span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <button onClick={() => updateQuantity(item.id, -1)} style={{ padding: "2px 8px" }}>-</button>
+                    <span>{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} style={{ padding: "2px 8px" }}>+</button>
+                    <button onClick={() => removeItem(item.id)} style={{ color: "red", border: "none", background: "none", cursor: "pointer", marginLeft: "10px" }}>❌</button>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <button onClick={() => updateQuantity(item.id, -1)} style={{ width: "25px", height: "25px" }}>-</button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.id, 1)} style={{ width: "25px", height: "25px" }}>+</button>
-                </div>
-                <button onClick={() => removeItem(item.id)} style={{ color: "red", border: "none", background: "none", cursor: "pointer" }}>❌</button>
-              </div>
-            ))}
-            <h3 style={{ textAlign: "right", color: "#2e7d32" }}>စုစုပေါင်း - {totalPrice.toLocaleString()} ကျပ်</h3>
+              ))}
+            </div>
+
+            <div style={{ marginTop: "20px", fontSize: "18px", fontWeight: "bold", borderTop: "2px solid #2e7d32", paddingTop: "10px" }}>
+              စုစုပေါင်း ကျသင့်ငွေ - <span style={{ color: "#2e7d32" }}>{calculateTotal().toLocaleString()} ကျပ်</span>
+            </div>
           </div>
 
-          {/* ညာဘက် - Delivery & Order Form */}
-          <div style={{ backgroundColor: "#f9f9f9", padding: "20px", borderRadius: "10px", border: "1px solid #e0e0e0" }}>
-            <h3 style={{ marginTop: 0, color: "#1b5e20" }}>ပို့ဆောင်ရမည့် လိပ်စာ</h3>
-            <form onSubmit={handleConfirmOrder} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* ညာဘက် - ပို့ဆောင်ရမည့် လိပ်စာ ဖြည့်ရန် Form */}
+          <div style={{ border: "1px solid #ddd", padding: "20px", borderRadius: "8px", backgroundColor: "#f9f9f9" }}>
+            <h3>📦 ပို့ဆောင်ရမည့် အချက်အလက်</h3>
+            <form onSubmit={handleOrderSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>အမည် -</label>
+                <label>အမည် -</label>
                 <input
                   type="text"
                   required
-                  placeholder="ဦးမြ"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", marginTop: "4px" }}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="သင့်အမည် ရိုက်ထည့်ပါ"
+                  style={{ width: "100%", padding: "8px", marginTop: "5px" }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>ဖုန်းနံပါတ် -</label>
+                <label>ဖုန်းနံပါတ် -</label>
                 <input
-                  type="tel"
+                  type="text"
                   required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   placeholder="09xxxxxxxxx"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", marginTop: "4px" }}
+                  style={{ width: "100%", padding: "8px", marginTop: "5px" }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>မြို့နယ် -</label>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", marginTop: "4px" }}
-                >
-                  <option value="Yangon">ရန်ကုန်</option>
-                  <option value="Mandalay">မန္တလေး</option>
-                  <option value="Naypyidaw">နေပြည်တော်</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>အသေးစိတ် လိပ်စာ -</label>
+                <label>အသေးစိတ် လိပ်စာ -</label>
                 <textarea
                   required
-                  rows={3}
-                  placeholder="အိမ်အမှတ်၊ လမ်း၊ ရပ်ကွက်"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", marginTop: "4px" }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>ငွေပေးချေမှု နည်းလမ်း -</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", marginTop: "4px" }}
-                >
-                  <option value="cod">Cash on Delivery (ပစ္စည်းရောက်ငွေချေ)</option>
-                  <option value="bank">KPay / Wave Money</option>
-                </select>
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="မြို့နယ်၊ လမ်း၊ အိမ်နံပါတ် စသည်ဖြင့်..."
+                  style={{ width: "100%", padding: "8px", marginTop: "5px", height: "80px" }}
+                ></textarea>
               </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={loading}
                 style={{
-                  backgroundColor: isSubmitting ? "#81c784" : "#2e7d32",
-                  color: "white",
                   padding: "12px",
+                  backgroundColor: loading ? "#ccc" : "#2e7d32",
+                  color: "white",
                   border: "none",
-                  borderRadius: "6px",
+                  borderRadius: "5px",
+                  cursor: loading ? "not-allowed" : "pointer",
                   fontSize: "16px",
                   fontWeight: "bold",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
                   marginTop: "10px",
                 }}
               >
-                {isSubmitting ? "Order တင်နေပါသည်..." : "မှာယူမှုကို အတည်ပြုမည်"}
+                {loading ? "Order တင်နေပါသည်..." : "Order တင်မည်"}
               </button>
             </form>
           </div>

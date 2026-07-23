@@ -1,185 +1,74 @@
-// src/app/login/page.js
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState("customer"); // default is customer
+  const [isRegister, setIsRegister] = useState(false);
+  
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("CUSTOMER"); // "CUSTOMER" သို့မဟုတ် "FARMER"
 
-  const handleLogin = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      alert("အီးမေးလ်နှင့် လျှို့ဝှက်နံပါတ် ဖြည့်ပေးပါ ခင်ဗျာ!");
-      return;
-    }
+    const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
+    const body = isRegister ? { name, email, password, role } : { email, password };
 
-    
-    // Role နှင့် Login အခြေအနေကို LocalStorage ထဲတွင် သိမ်းဆည်းခြင်း
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("userEmail", email);
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-    alert(
-      `🎉 ${role === "farmer" ? "တောင်သူ" : "ဝယ်ယူသူ"} အဖြစ် အောင်မြင်စွာ Login ဝင်ပြီးပါပြီ!`,
-    );
+    const data = await res.json();
 
-    if (role === "farmer") {
-      router.push("/dashboard"); // တောင်သူဆိုရင် Dashboard သို့သွားမည်
+    if (res.ok) {
+      if (isRegister) {
+        alert("🎉 အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။ Login ဝင်ပါ");
+        setIsRegister(false);
+      } else {
+        // User အချက်အလက်ကို LocalStorage တွင် သိမ်းထားမည်
+        localStorage.setItem("user", JSON.stringify(data.user));
+        alert(`🎉 မင်္ဂလာပါ ${data.user.name} (${data.user.role})`);
+        
+        // ဝယ်သူဆိုရင် Home Page ( / ), တောင်သူဆိုရင် Dashboard ( /dashboard ) သို့ သွားမည်
+        router.push(data.redirectTo);
+      }
     } else {
-      router.push("/"); // ဝယ်ယူသူဆိုရင် Home သို့သွားမည်
+      alert(data.error || "အမှားတစ်ခု ဖြစ်ပေါ်နေပါသည်");
     }
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "450px",
-        margin: "80px auto",
-        padding: "30px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "16px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-        backgroundColor: "#fff",
-      }}
-    >
-      <h2
-        style={{ textAlign: "center", color: "#2e7d32", marginBottom: "25px" }}
-      >
-        ချိတ်ဆက်ဈေးကွက် အကောင့်ဝင်ရန် 🔑
-      </h2>
-
-      <form
-        onSubmit={handleLogin}
-        style={{ display: "flex", flexDirection: "column", gap: "18px" }}
-      >
-        {/* Role Selection */}
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontWeight: "bold",
-              marginBottom: "8px",
-              color: "#4a5568",
-            }}
-          >
-            အကောင့်အမျိုးအစား ရွေးချယ်ပါ
-          </label>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              type="button"
-              onClick={() => setRole("customer")}
-              style={{
-                flex: 1,
-                padding: "10px",
-                borderRadius: "8px",
-                border:
-                  role === "customer"
-                    ? "2px solid #2e7d32"
-                    : "1px solid #cbd5e0",
-                backgroundColor: role === "customer" ? "#e8f5e9" : "#fff",
-                color: role === "customer" ? "#2e7d32" : "#4a5568",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              🛒 ဝယ်ယူသူ (Customer)
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("farmer")}
-              style={{
-                flex: 1,
-                padding: "10px",
-                borderRadius: "8px",
-                border:
-                  role === "farmer" ? "2px solid #2e7d32" : "1px solid #cbd5e0",
-                backgroundColor: role === "farmer" ? "#e8f5e9" : "#fff",
-                color: role === "farmer" ? "#2e7d32" : "#4a5568",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              🚜 တောင်သူ (Farmer)
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label
-            style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
-          >
-            အီးမေးလ် သို့မဟုတ် ဖုန်းနံပါတ်
-          </label>
-          <input
-            type="email"
-            placeholder="example@gmail.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "8px",
-              border: "1px solid #cbd5e0",
-            }}
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
-          >
-            လျှို့ဝှက်နံပါတ်
-          </label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "8px",
-              border: "1px solid #cbd5e0",
-            }}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          style={{
-            padding: "12px",
-            backgroundColor: "#2e7d32",
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "1rem",
-            marginTop: "10px",
-          }}
-        >
-          ဝင်ရောက်မည်
+    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
+      <h2>{isRegister ? "🔑 အကောင့်သစ်ဖွင့်ရန်" : "🔐 Login ဝင်ရန်"}</h2>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {isRegister && (
+          <>
+            <input type="text" placeholder="အမည်" value={name} onChange={(e) => setName(e.target.value)} required style={{ padding: "8px" }} />
+            <div>
+              <label><strong>အကောင့်အမျိုးအစား: </strong></label>
+              <select value={role} onChange={(e) => setRole(e.target.value)} style={{ padding: "8px", marginLeft: "10px" }}>
+                <option value="CUSTOMER">🛒 ဝယ်သူ (Customer)</option>
+                <option value="FARMER">🌾 စိုက်ပျိုးသူ တောင်သူ (Farmer)</option>
+              </select>
+            </div>
+          </>
+        )}
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ padding: "8px" }} />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ padding: "8px" }} />
+        
+        <button type="submit" style={{ padding: "10px", backgroundColor: "#2e7d32", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+          {isRegister ? "အကောင့်ဖွင့်မည်" : "Login ဝင်မည်"}
         </button>
-        <div style={{ textAlign: "center", marginTop: "10px" }}>
-          <Link
-            href="/"
-            style={{
-              color: "#4a5568",
-              textDecoration: "none",
-              fontSize: "0.9rem",
-            }}
-          >
-            🏠 ပင်မစာမျက်နှာသို့ ပြန်ရန်
-          </Link>
-        </div>
       </form>
+
+      <button onClick={() => setIsRegister(!isRegister)} style={{ marginTop: "15px", background: "none", border: "none", color: "#1976d2", cursor: "pointer" }}>
+        {isRegister ? "ရှိပြီးသား အကောင့်ဖြင့် Login ဝင်ရန်" : "အကောင့်အသစ်မရှိသေးပါက အကောင့်ဖွင့်ရန်"}
+      </button>
     </div>
   );
 }
