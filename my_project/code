@@ -1,0 +1,2125 @@
+// src/app/cart/page.js
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function CartPage() {
+  const router = useRouter();
+  const [cartItems, setCartItems] = useState([]);
+
+  // မှာယူသူအချက်အလက် State
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [city, setCity] = useState("yangon"); // default yangon
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cod"); // default Cash On Delivery
+
+  // အကြံပြုအသီးအနှံ (၉) မျိုး
+  const recommendedFruits = [
+    {
+      id: "1",
+      name: "ပြင်ဦးလွင် စတော်ဘယ်ရီ",
+      price: 5000,
+      farmer: "ဒေါ်လှ",
+      image:
+        "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&q=80",
+    },
+    {
+      id: "2",
+      name: "ရှမ်းရိုးရာ လိမ္မော်သီး",
+      price: 3000,
+      farmer: "စိုင်းဆိုင်",
+      image:
+        "https://images.unsplash.com/photo-1547514701-42782101795e?w=500&q=80",
+    },
+    {
+      id: "3",
+      name: "အောင်ပန်း အာလူး",
+      price: 1500,
+      farmer: "ဦးလှ",
+      image:
+        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80",
+    },
+    {
+      id: "4",
+      name: "မော်လမြိုင် ကျွဲကောသီး",
+      price: 4500,
+      farmer: "ဒေါ်နီ",
+      image:
+        "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=500&q=80",
+    },
+    {
+      id: "5",
+      name: "ရွှေတောင် ထောပတ်သီး",
+      price: 3500,
+      farmer: "ကိုမင်း",
+      image:
+        "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=500&q=80",
+    },
+    {
+      id: "6",
+      name: "ကျောက်ဆည် သရက်သီး",
+      price: 6000,
+      farmer: "ဦးဘ",
+      image:
+        "https://images.unsplash.com/photo-1553279768-865429fa0078?w=500&q=80",
+    },
+    {
+      id: "7",
+      name: "မှော်ဘီ သင်္ဘောသီး",
+      price: 2000,
+      farmer: "ဦးတင်",
+      image:
+        "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=500&q=80",
+    },
+    {
+      id: "8",
+      name: "သီပေါ နာနတ်သီး",
+      price: 2500,
+      farmer: "နန်းမွေ",
+      image:
+        "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=500&q=80",
+    },
+    {
+      id: "9",
+      name: "ပြင်ဦးလွင် ပန်းသီး",
+      price: 4000,
+      farmer: "ဒေါ်မြ",
+      image:
+        "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&q=80",
+    },
+  ];
+
+  useEffect(() => {
+    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    setCartItems(savedCart);
+  }, []);
+
+  // ခြင်းတောင်းထဲက ပစ္စည်းပမာဏ အတိုးအလျော့ ပြုလုပ်ခြင်း
+  const updateQuantity = (id, change) => {
+    const updated = cartItems.map((item) => {
+      if (item.id === id) {
+        const newQty = Math.max(1, item.quantity + change);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    });
+    setCartItems(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
+  };
+
+  // ဘေးမှ အကြံပြုအသီးများအား ချက်ချင်းထည့်သွင်းခြင်း
+  const handleQuickAdd = (fruit) => {
+    let cart = [...cartItems];
+    const existingIndex = cart.findIndex((item) => item.id === fruit.id);
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += 1;
+    } else {
+      cart.push({ ...fruit, quantity: 1 });
+    }
+    setCartItems(cart);
+    localStorage.setItem("cart", JSON.stringify(cart));
+  };
+
+  // စုစုပေါင်း ဈေးနှုန်း တွက်ချက်ခြင်း
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+
+  // မှာယူမှု အတည်ပြုခြင်း
+  const handleConfirmOrder = (e) => {
+    e.preventDefault();
+    if (!customerName || !customerPhone || !customerAddress) {
+      alert("⚠️ မှာယူသူအချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်စွက်ပေးပါဦး ခင်ဗျာ!");
+      return;
+    }
+
+    const payMsg =
+      paymentMethod === "cod"
+        ? "📦 အိမ်ရောက်ငွေချေစနစ်ဖြင့် မှာယူထားပါသည်။"
+        : "🏦 မိုဘိုင်းဘဏ်စနစ်ဖြင့် လွှဲပေးရမည်ဖြစ်ပြီး၊ ငွေလွှဲပြေစာအား ပေးပို့ပေးရန် လိုအပ်ပါသည်။";
+
+    alert(
+      `🎉 မှာယူမှု အောင်မြင်ပါသည် ခင်ဗျာ!\n\nစုစုပေါင်း ကျသင့်ငွေ - ${totalPrice} ကျပ်\n${payMsg}`,
+    );
+
+    // Clear Cart
+    localStorage.removeItem("cart");
+    setCartItems([]);
+    router.push("/");
+  };
+  // မြို့ပေါ်မူတည်၍ ငွေချေစနစ်ပြောင်းလဲခြင်း
+  const handleCityChange = (e) => {
+    const selectedCity = e.target.value;
+    setCity(selectedCity);
+    if (selectedCity === "yangon" || selectedCity === "mandalay") {
+      setPaymentMethod("cod"); // ရန်ကုန်နှင့် မန္တလေးဆိုလျှင် အိမ်ရောက်ငွေချေ ရွေးခွင့်ပြုသည်
+    } else {
+      setPaymentMethod("bank"); // အခြားမြို့များဆိုလျှင် ဘဏ်စနစ်သာရမည်
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "15px 0",
+          borderBottom: "1px solid #e2e8f0",
+          marginBottom: "30px",
+        }}
+      >
+        <h1 style={{ color: "#2e7d32", margin: 0, fontSize: "1.5rem" }}>
+          🛒 ခြင်းတောင်းစာမျက်နှာ
+        </h1>
+        <Link
+          href="/"
+          style={{
+            textDecoration: "none",
+            color: "#4a5568",
+            fontWeight: "bold",
+            border: "1px solid #cbd5e0",
+            padding: "8px 16px",
+            borderRadius: "8px",
+          }}
+        >
+          🏠 ဈေးဝယ်ရန် ပြန်သွားမည်
+        </Link>
+      </header>
+
+      {cartItems.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "50px 0" }}>
+          <h2>ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ 🛒</h2>
+          <Link
+            href="/"
+            style={{
+              backgroundColor: "#2e7d32",
+              color: "white",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              textDecoration: "none",
+              display: "inline-block",
+              marginTop: "15px",
+            }}
+          >
+            ဝယ်ယူရန် သွားမည်
+          </Link>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "3fr 2fr",
+            gap: "30px",
+          }}
+        >
+          {/* ဘယ်ဘက်ခြမ်း: ရွေးထားသောအသီးများ (အတိုးအလျော့လုပ်နိုင်) */}
+          <div>
+            <div
+              style={{
+                border: "1px solid #e2e8f0",
+                padding: "20px",
+                borderRadius: "12px",
+                marginBottom: "30px",
+              }}
+            >
+              <h3
+                style={{
+                  marginTop: 0,
+                  borderBottom: "2px solid #e2e8f0",
+                  paddingBottom: "10px",
+                }}
+              >
+                ရွေးချယ်ထားသော အသီးအနှံများ
+              </h3>
+              {cartItems.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    gap: "15px",
+                    padding: "15px 0",
+                    borderBottom: "1px solid #edf2f7",
+                    alignItems: "center",
+                  }}
+                >
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: "0 0 5px 0" }}>{item.name}</h4>
+                    <span style={{ color: "#e65100", fontWeight: "bold" }}>
+                      {item.price * item.quantity} ကျပ်
+                    </span>
+                  </div>
+
+                  {/* အတိုးအလျော့ခလုတ် */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      border: "1px solid #cbd5e0",
+                      borderRadius: "6px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      onClick={() => updateQuantity(item.id, -1)}
+                      style={{
+                        padding: "5px 10px",
+                        border: "none",
+                        backgroundColor: "#edf2f7",
+                        cursor: "pointer",
+                      }}
+                    >
+                      -
+                    </button>
+                    <span
+                      style={{
+                        padding: "5px 10px",
+                        minWidth: "25px",
+                        textAlign: "center",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, 1)}
+                      style={{
+                        padding: "5px 10px",
+                        border: "none",
+                        backgroundColor: "#edf2f7",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                  fontWeight: "bold",
+                  fontSize: "1.2rem",
+                }}
+              >
+                <span>စုစုပေါင်း ကျသင့်ငွေ</span>
+                <span style={{ color: "#2e7d32" }}>{totalPrice} ကျပ်</span>
+              </div>
+            </div>
+
+            {/* ဘေးမှ တခြားထပ်မှာချင်သည့် အသီးအနှံ (၉) မျိုးအကြံပြုချက် */}
+            <div>
+              <h3 style={{ marginBottom: "15px" }}>
+                တခြားထပ်မံမှာယူနိုင်သော အသီးအနှံများ 🍎
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                  gap: "15px",
+                }}
+              >
+                {recommendedFruits.map((fruit) => (
+                  <div
+                    key={fruit.id}
+                    style={{
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      padding: "10px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <img
+                      src={fruit.image}
+                      alt={fruit.name}
+                      style={{
+                        width: "100%",
+                        height: "100px",
+                        objectFit: "cover",
+                        borderRadius: "6px",
+                      }}
+                    />
+                    <h5 style={{ margin: "8px 0 4px 0", fontSize: "0.9rem" }}>
+                      {fruit.name}
+                    </h5>
+                    <p
+                      style={{
+                        margin: "0 0 8px 0",
+                        fontSize: "0.8rem",
+                        color: "#e65100",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {fruit.price} ကျပ်
+                    </p>
+                    <button
+                      onClick={() => handleQuickAdd(fruit)}
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#2e7d32",
+                        color: "white",
+                        border: "none",
+                        padding: "6px",
+                        borderRadius: "6px",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      + ထည့်မည်
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ညာဘက်ခြမ်း: မှာယူသူအချက်အလက်နှင့် ငွေချေစနစ်ရွေးချယ်ခြင်း */}
+          <div
+            style={{
+              backgroundColor: "#f7fafc",
+              border: "1px solid #e2e8f0",
+              padding: "25px",
+              borderRadius: "12px",
+              height: "fit-content",
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: "20px" }}>
+              မှာယူမှု အတည်ပြုရန်
+            </h3>
+
+            <form
+              onSubmit={handleConfirmOrder}
+              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    marginBottom: "5px",
+                  }}
+                >
+                  အမည်
+                </label>
+                <input
+                  type="text"
+                  placeholder="ကိုအောင်အောင်"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #cbd5e0",
+                    borderRadius: "8px",
+                  }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    marginBottom: "5px",
+                  }}
+                >
+                  ဖုန်းနံပါတ်
+                </label>
+                <input
+                  type="tel"
+                  placeholder="09xxxxxxxxx"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #cbd5e0",
+                    borderRadius: "8px",
+                  }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    marginBottom: "5px",
+                  }}
+                >
+                  မြို့နယ်ရွေးချယ်ပါ
+                </label>
+                <select
+                  value={city}
+                  onChange={handleCityChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #cbd5e0",
+                    borderRadius: "8px",
+                    backgroundColor: "white",
+                  }}
+                >
+                  <option value="yangon">
+                    ရန်ကုန်မြို့ (အိမ်ရောက်ငွေချေရ)
+                  </option>
+                  <option value="mandalay">
+                    မန္တလေးမြို့ (အိမ်ရောက်ငွေချေရ)
+                  </option>
+                  <option value="other">အခြားမြို့များ (ဘဏ်လွှဲဖြင့်သာ)</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    marginBottom: "5px",
+                  }}
+                >
+                  ငွေချေစနစ်
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  {(city === "yangon" || city === "mandalay") && (
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="cod"
+                        checked={paymentMethod === "cod"}
+                        onChange={() => setPaymentMethod("cod")}
+                      />
+                      💵 အိမ်ရောက်မှ ငွေချေမည် (Cash On Delivery)
+                    </label>
+                  )}
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="bank"
+                      checked={paymentMethod === "bank"}
+                      onChange={() => setPaymentMethod("bank")}
+                    />
+                    🏦 မိုဘိုင်းဘဏ်စနစ် (KPay, WavePay)
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.85rem",
+                    fontWeight: "bold",
+                    marginBottom: "5px",
+                  }}
+                >
+                  ပို့ဆောင်ပေးရမည့် လိပ်စာအပြည့်အစုံ
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="အမှတ်၊ လမ်း၊ ရပ်ကွက်"
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #cbd5e0",
+                    borderRadius: "8px",
+                    fontFamily: "inherit",
+                  }}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  width: "100%",
+                  backgroundColor: "#2e7d32",
+                  color: "white",
+                  border: "none",
+                  padding: "14px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                  marginTop: "10px",
+                }}
+              >
+                မှာယူမှုကို အတည်ပြုမည် 🛍️
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// src/app/dashboard/page.js
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
+export default function DashboardPage() {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [farmer, setFarmer] = useState("");
+  const [image, setImage] = useState(null); // File Upload သိမ်းဆည်းရန် State
+
+  // သစ်သီး (၉) မျိုးစာရင်း
+  const [products, setProducts] = useState([
+    {
+      id: "1",
+      name: "ပြင်ဦးလွင် စတော်ဘယ်ရီ",
+      price: "၅၀၀၀",
+      farmer: "ဒေါ်လှ (ပြင်ဦးလွင်)",
+      image:
+        "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&q=80",
+    },
+    {
+      id: "2",
+      name: "ရှမ်းရိုးရာ လိမ္မော်သီး",
+      price: "၃၀၀၀",
+      farmer: "စိုင်းဆိုင် (ရှမ်း)",
+      image:
+        "https://images.unsplash.com/photo-1547514701-42782101795e?w=500&q=80",
+    },
+    {
+      id: "3",
+      name: "အောင်ပန်း အာလူး",
+      price: "၁၅၀၀",
+      farmer: "ဦးလှ (အောင်ပန်း)",
+      image:
+        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80",
+    },
+    {
+      id: "4",
+      name: "မော်လမြိုင် ကျွဲကောသီး",
+      price: "၄၅၀၀",
+      farmer: "ဒေါ်နီ (မော်လမြိုင်)",
+      image:
+        "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=500&q=80",
+    },
+    {
+      id: "5",
+      name: "ရွှေတောင် ထောပတ်သီး",
+      price: "၃၅၀၀",
+      farmer: "ကိုမင်း (ရွှေတောင်)",
+      image:
+        "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=500&q=80",
+    },
+    {
+      id: "6",
+      name: "ကျောက်ဆည် သရက်သီး (စိန်တလုံး)",
+      price: "၆၀၀၀",
+      farmer: "ဦးဘ (ကျောက်ဆည်)",
+      image:
+        "https://images.unsplash.com/photo-1553279768-865429fa0078?w=500&q=80",
+    },
+    {
+      id: "7",
+      name: "မှော်ဘီ သင်္ဘောသီး",
+      price: "၂၀၀၀",
+      farmer: "ဦးတင် (မှော်ဘီ)",
+      image:
+        "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=500&q=80",
+    },
+    {
+      id: "8",
+      name: "သီပေါ နာနတ်သီး",
+      price: "၂၅၀၀",
+      farmer: "နန်းမွေ (သီပေါ)",
+      image:
+        "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=500&q=80",
+    },
+    {
+      id: "9",
+      name: "ပြင်ဦးလွင် ပန်းသီး",
+      price: "၄၀၀၀",
+      farmer: "ဒေါ်မြ (ပြင်ဦးလွင်)",
+      image:
+        "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&q=80",
+    },
+  ]);
+
+  // File ရွေးချယ်မှု ပြောင်းလဲသည့်အခါ ဖတ်ရန်
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Laptop ထဲက ပုံဖိုင်ကို Browser မှာ မြင်တွေ့ရအောင် URL အဖြစ် ပြောင်းလဲပေးခြင်း
+      setImage(URL.createObjectURL(file));
+    }
+  };
+
+  // သီးနှံသစ် တင်သွင်းခြင်း
+  const handleAddProduct = (e) => {
+    e.preventDefault();
+    if (!name || !price) {
+      alert("သီးနှံအမည်နှင့် ဈေးနှုန်းကို ဖြည့်စွက်ပေးပါဦး ခင်ဗျာ!");
+      return;
+    }
+
+    // တကယ်လို့ ပုံမတင်ထားရင် default ပုံ ထည့်ပေးမည်
+    const finalImage =
+      image ||
+      "https://images.unsplash.com/photo-1610832958506-ee56336191d1?w=500&q=80";
+
+    const newProduct = {
+      id: Date.now().toString(),
+      name,
+      price,
+      farmer: farmer || "အမည်မသိ တောင်သူ",
+      image: finalImage,
+    };
+
+    setProducts([newProduct, ...products]);
+    alert(`${name} သီးနှံအသစ်ကို အောင်မြင်စွာ တင်သွင်းပြီးပါပြီ! 🎉`);
+
+    // Form ပြန်ရှင်းရန်
+    setName("");
+    setPrice("");
+    setFarmer("");
+    setImage(null);
+  };
+
+  
+  return (
+    <div
+      style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "20px",
+        fontFamily: "inherit",
+      }}
+    >
+      {/* အပေါ်ပိုင်း Navbar */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "40px",
+          borderBottom: "1px solid #e2e8f0",
+          paddingBottom: "20px",
+        }}
+      >
+        <h1 style={{ color: "#2e7d32", margin: 0, fontSize: "1.8rem" }}>
+          Farmer Dashboard 🚜
+        </h1>
+        <Link
+          href="/"
+          style={{
+            color: "#2e7d32",
+            textDecoration: "none",
+            fontWeight: "bold",
+          }}
+        >
+          ← ပင်မစာမျက်နှာသို့
+        </Link>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "40px",
+        }}
+      >
+        {/* လက်ဝဲဘက်ခြမ်း: သီးနှံအသစ် တင်သွင်းရန် Form */}
+        <div
+          style={{
+            backgroundColor: "#f8fafc",
+            padding: "30px",
+            borderRadius: "16px",
+            border: "1px solid #e2e8f0",
+            height: "fit-content",
+          }}
+        >
+          <h2 style={{ color: "#1e293b", marginTop: 0, marginBottom: "20px" }}>
+            သီးနှံအသစ် တင်သွင်းရန်
+          </h2>
+          <form
+            onSubmit={handleAddProduct}
+            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+          >
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "500",
+                }}
+              >
+                သီးနှံအမည်
+              </label>
+              <input
+                type="text"
+                placeholder="ဥပမာ - ရွှေတောင်ထောပတ်သီး"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e0",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "500",
+                }}
+              >
+                ဈေးနှုန်း (ကျပ် / ပိဿာ)
+              </label>
+              <input
+                type="text"
+                placeholder="ဥပမာ - ၃၅၀၀"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e0",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "500",
+                }}
+              >
+                တောင်သူအမည်
+              </label>
+              <input
+                type="text"
+                placeholder="ဥပမာ - ဦးလှ"
+                value={farmer}
+                onChange={(e) => setFarmer(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e0",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "500",
+                }}
+              >
+                သစ်သီးဓာတ်ပုံ ရွေးချယ်ရန်
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ width: "100%", padding: "5px 0" }}
+              />
+            </div>
+
+            {/* ပုံရွေးချယ်ထားပြီးပါက Preview ပြသရန် */}
+            {image && (
+              <div style={{ marginTop: "10px" }}>
+                <p
+                  style={{
+                    margin: "0 0 5px 0",
+                    fontSize: "0.9rem",
+                    color: "#64748b",
+                  }}
+                >
+                  ရွေးချယ်ထားသော ပုံနမူနာ -
+                </p>
+                <img
+                  src={image}
+                  alt="preview"
+                  style={{
+                    width: "100px",
+                    height: "100px",
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              style={{
+                padding: "12px",
+                backgroundColor: "#2e7d32",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                marginTop: "10px",
+              }}
+            >
+              တင်သွင်းမည်
+            </button>
+          </form>
+        </div>
+
+        {/* လက်ယာဘက်ခြမ်း: ရောင်းချနေဆဲ သီးနှံများပြသသည့်စာရင်း */}
+        <div>
+          <h2 style={{ color: "#1e293b", marginTop: 0, marginBottom: "20px" }}>
+            ရောင်းချနေဆဲ သီးနှံများ ({products.length})
+          </h2>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+          >
+            {products.map((product) => (
+              <div
+                key={product.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "15px",
+                  padding: "15px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: "0 0 5px 0", color: "#1e293b" }}>
+                    {product.name}
+                  </h4>
+                  <p
+                    style={{ margin: 0, fontSize: "0.9rem", color: "#64748b" }}
+                  >
+                    တောင်သူ: {product.farmer}
+                  </p>
+                </div>
+                <div style={{ color: "#e65100", fontWeight: "bold" }}>
+                  {product.price} ကျပ်
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+// src/app/login/page.js
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [role, setRole] = useState("customer"); // default is customer
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (!email || !password) {
+      alert("အီးမေးလ်နှင့် လျှို့ဝှက်နံပါတ် ဖြည့်ပေးပါ ခင်ဗျာ!");
+      return;
+    }
+
+    
+    // Role နှင့် Login အခြေအနေကို LocalStorage ထဲတွင် သိမ်းဆည်းခြင်း
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("userEmail", email);
+
+    alert(
+      `🎉 ${role === "farmer" ? "တောင်သူ" : "ဝယ်ယူသူ"} အဖြစ် အောင်မြင်စွာ Login ဝင်ပြီးပါပြီ!`,
+    );
+
+    if (role === "farmer") {
+      router.push("/dashboard"); // တောင်သူဆိုရင် Dashboard သို့သွားမည်
+    } else {
+      router.push("/"); // ဝယ်ယူသူဆိုရင် Home သို့သွားမည်
+    }
+  };
+
+  return (
+    <div
+      style={{
+        maxWidth: "450px",
+        margin: "80px auto",
+        padding: "30px",
+        border: "1px solid #e2e8f0",
+        borderRadius: "16px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        backgroundColor: "#fff",
+      }}
+    >
+      <h2
+        style={{ textAlign: "center", color: "#2e7d32", marginBottom: "25px" }}
+      >
+        ချိတ်ဆက်ဈေးကွက် အကောင့်ဝင်ရန် 🔑
+      </h2>
+
+      <form
+        onSubmit={handleLogin}
+        style={{ display: "flex", flexDirection: "column", gap: "18px" }}
+      >
+        {/* Role Selection */}
+        <div>
+          <label
+            style={{
+              display: "block",
+              fontWeight: "bold",
+              marginBottom: "8px",
+              color: "#4a5568",
+            }}
+          >
+            အကောင့်အမျိုးအစား ရွေးချယ်ပါ
+          </label>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="button"
+              onClick={() => setRole("customer")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border:
+                  role === "customer"
+                    ? "2px solid #2e7d32"
+                    : "1px solid #cbd5e0",
+                backgroundColor: role === "customer" ? "#e8f5e9" : "#fff",
+                color: role === "customer" ? "#2e7d32" : "#4a5568",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              🛒 ဝယ်ယူသူ (Customer)
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole("farmer")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border:
+                  role === "farmer" ? "2px solid #2e7d32" : "1px solid #cbd5e0",
+                backgroundColor: role === "farmer" ? "#e8f5e9" : "#fff",
+                color: role === "farmer" ? "#2e7d32" : "#4a5568",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              🚜 တောင်သူ (Farmer)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label
+            style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+          >
+            အီးမေးလ် သို့မဟုတ် ဖုန်းနံပါတ်
+          </label>
+          <input
+            type="email"
+            placeholder="example@gmail.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "8px",
+              border: "1px solid #cbd5e0",
+            }}
+            required
+          />
+        </div>
+
+        <div>
+          <label
+            style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}
+          >
+            လျှို့ဝှက်နံပါတ်
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "8px",
+              border: "1px solid #cbd5e0",
+            }}
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          style={{
+            padding: "12px",
+            backgroundColor: "#2e7d32",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "1rem",
+            marginTop: "10px",
+          }}
+        >
+          ဝင်ရောက်မည်
+        </button>
+        <div style={{ textAlign: "center", marginTop: "10px" }}>
+          <Link
+            href="/"
+            style={{
+              color: "#4a5568",
+              textDecoration: "none",
+              fontSize: "0.9rem",
+            }}
+          >
+            🏠 ပင်မစာမျက်နှာသို့ ပြန်ရန်
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
+}
+// src/app/products/[id]/page.js
+"use client";
+
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function ProductDetailPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const router = useRouter();
+  const { id } = params;
+  const [quantity, setQuantity] = useState(1);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const fruits = [
+    {
+      id: "1",
+      name: "ပြင်ဦးလွင် စတော်ဘယ်ရီ",
+      price: 5000,
+      farmer: "ဒေါ်လှ (ပြင်ဦးလွင်)",
+      image:
+        "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&q=80",
+      desc: "ပြင်ဦးလွင်မြို့မှ တိုက်ရိုက်ဆွတ်ခူးထားသော လတ်ဆတ်ပြီး ချိုမြိန်သည့် စတော်ဘယ်ရီသီးများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "2",
+      name: "ရှမ်းရိုးရာ လိမ္မော်သီး",
+      price: 3000,
+      farmer: "စိုင်းဆိုင် (ရှမ်း)",
+      image:
+        "https://images.unsplash.com/photo-1547514701-42782101795e?w=500&q=80",
+      desc: "ရှမ်းကုန်းပြင်မြင့်မှ သဘာဝအတိုင်း စိုက်ပျိုးထားသော ရွှေလိမ္မော်သီးချိုချိုလေးများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "3",
+      name: "အောင်ပန်း အာလူး",
+      price: 1500,
+      farmer: "ဦးလှ (အောင်ပန်း)",
+      image:
+        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80",
+      desc: "ဟင်းချက်ရာတွင် အရသာအလွန်ကောင်းမွန်သော အောင်ပန်းဒေသထွက် အာလူးသစ်များ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "4",
+      name: "မော်လမြိုင် ကျွဲကောသီး",
+      price: 4500,
+      farmer: "ဒေါ်နီ (မော်လမြိုင်)",
+      image:
+        "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=500&q=80",
+      desc: "အရည်ရွှမ်းပြီး ချိုချဉ်အရသာရှိသော မော်လမြိုင်ကျွဲကောသီး အကောင်းစားများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "5",
+      name: "ရွှေတောင် ထောပတ်သီး",
+      price: 3500,
+      farmer: "ကိုမင်း (ရွှေတောင်)",
+      image:
+        "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=500&q=80",
+      desc: "ဆီပါဝင်မှုနှုန်းမြင့်မားပြီး အနှစ်များသော ရွှေတောင်ဒေသထွက် ထောပတ်သီးကောင်းများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "6",
+      name: "ကျောက်ဆည် သရက်သီး",
+      price: 6000,
+      farmer: "ဦးဘ (ကျောက်ဆည်)",
+      image:
+        "https://images.unsplash.com/photo-1553279768-865429fa0078?w=500&q=80",
+      desc: "အနံ့မွှေးပျံ့ပြီး အရသာအလွန်ထူးကဲသော ကျောက်ဆည်စိန်တလုံးသရက်သီးများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "7",
+      name: "မှော်ဘီ သင်္ဘောသီး",
+      price: 2000,
+      farmer: "ဦးတင် (မှော်ဘီ)",
+      image:
+        "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=500&q=80",
+      desc: "ဓာတုဆေးဝါးကင်းစင်ပြီး သဘာဝအတိုင်း မှည့်ထားသော မှော်ဘီသင်္ဘောသီးချိုများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "8",
+      name: "သီပေါ နာနတ်သီး",
+      price: 2500,
+      farmer: "နန်းမွေ (သီပေါ)",
+      image:
+        "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=500&q=80",
+      desc: "ချိုမြိန်အေးမြစေသော သီပေါဒေသထွက် နာနတ်သီးအကောင်းစားများ ဖြစ်ပါသည်။",
+    },
+    {
+      id: "9",
+      name: "ပြင်ဦးလွင် ပန်းသီး",
+      price: 4000,
+      farmer: "ဒေါ်မြ (ပြင်ဦးလွင်)",
+      image:
+        "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&q=80",
+      desc: "ကြွပ်ရွပြီး အရသာရှိလှသော ပြင်ဦးလွင်ဒေသထွက် ပန်းသီးလတ်ဆတ်များ ဖြစ်ပါသည်။",
+    },
+  ];
+
+  const fruit = fruits.find((f) => f.id === id) || fruits[0];
+
+  useEffect(() => {
+    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+  }, []);
+
+  const handleAddToCart = () => {
+    if (!isLoggedIn) {
+      alert("⚠️ ခြင်းတောင်းထဲ ထည့်ရန် ဦးစွာ Login ဝင်ပေးပါဦး ခင်ဗျာ!");
+      router.push("/login");
+      return;
+    }
+
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const existingIndex = cart.findIndex((item) => item.id === fruit.id);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += quantity;
+    } else {
+      cart.push({ ...fruit, quantity });
+    }
+    
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert(
+      `🎉 ${fruit.name} (${quantity}) ပိဿာအား ခြင်းတောင်းထဲသို့ ထည့်သွင်းပြီးပါပြီ!`,
+    );
+    router.push("/");
+  };
+
+  return (
+    <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px" }}>
+      <Link
+        href="/"
+        style={{
+          textDecoration: "none",
+          color: "#2e7d32",
+          fontWeight: "bold",
+          display: "inline-block",
+          marginBottom: "20px",
+        }}
+      >
+        ⬅️ ပင်မစာမျက်နှာသို့ ပြန်သွားရန်
+      </Link>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: "40px",
+        }}
+      >
+        <img
+          src={fruit.image}
+          alt={fruit.name}
+          style={{
+            width: "100%",
+            borderRadius: "12px",
+            height: "350px",
+            objectFit: "cover",
+          }}
+        />
+
+        <div>
+          <h1 style={{ color: "#1a202c", margin: "0 0 10px 0" }}>
+            {fruit.name}
+          </h1>
+          <p
+            style={{ color: "#4a5568", fontWeight: "bold", fontSize: "1.1rem" }}
+          >
+            တောင်သူ - {fruit.farmer}
+          </p>
+          <p style={{ color: "#718096", lineHeight: "1.6" }}>{fruit.desc}</p>
+          <h2 style={{ color: "#e65100", margin: "20px 0" }}>
+            {fruit.price} ကျပ် / ပိဿာ
+          </h2>
+
+          {/* ပိဿာ အရေအတွက် တိုးလျော့စနစ် */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              marginBottom: "25px",
+            }}
+          >
+            <span style={{ fontWeight: "bold" }}>ပိဿာအရေအတွက်:</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                border: "1px solid #cbd5e0",
+                borderRadius: "8px",
+                overflow: "hidden",
+              }}
+            >
+              <button
+                onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  backgroundColor: "#edf2f7",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                -
+              </button>
+              <span
+                style={{
+                  padding: "8px 16px",
+                  fontWeight: "bold",
+                  minWidth: "40px",
+                  textAlign: "center",
+                }}
+              >
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity((prev) => prev + 1)}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  backgroundColor: "#edf2f7",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={handleAddToCart}
+            style={{
+              width: "100%",
+              backgroundColor: "#2e7d32",
+              color: "white",
+              border: "none",
+              padding: "14px",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "1rem",
+            }}
+          >
+            🛒 ခြင်းတောင်းထဲသို့ ထည့်မည်
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+// src/app/page.js
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export default function HomePage() {
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState("");
+  const [cartCount, setCartCount] = useState(0);
+
+  // အသီးအနှံ စုစုပေါင်း (၉) မျိုး
+  const fruits = [
+    {
+      id: "1",
+      name: "ပြင်ဦးလွင် စတော်ဘယ်ရီ",
+      price: 5000,
+      farmer: "ဒေါ်လှ (ပြင်ဦးလွင်)",
+      image:
+        "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&q=80",
+    },
+    {
+      id: "2",
+      name: "ရှမ်းရိုးရာ လိမ္မော်သီး",
+      price: 3000,
+      farmer: "စိုင်းဆိုင် (ရှမ်း)",
+      image:
+        "https://images.unsplash.com/photo-1547514701-42782101795e?w=500&q=80",
+    },
+    {
+      id: "3",
+      name: "အောင်ပန်း အာလူး",
+      price: 1500,
+      farmer: "ဦးလှ (အောင်ပန်း)",
+      image:
+        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80",
+    },
+    {
+      id: "4",
+      name: "မော်လမြိုင် ကျွဲကောသီး",
+      price: 4500,
+      farmer: "ဒေါ်နီ (မော်လမြိုင်)",
+      image:
+        "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=500&q=80",
+    },
+    {
+      id: "5",
+      name: "ရွှေတောင် ထောပတ်သီး",
+      price: 3500,
+      farmer: "ကိုမင်း (ရွှေတောင်)",
+      image:
+        "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=500&q=80",
+    },
+    {
+      id: "6",
+      name: "ကျောက်ဆည် သရက်သီး",
+      price: 6000,
+      farmer: "ဦးဘ (ကျောက်ဆည်)",
+      image:
+        "https://images.unsplash.com/photo-1553279768-865429fa0078?w=500&q=80",
+    },
+    {
+      id: "7",
+      name: "မှော်ဘီ သင်္ဘောသီး",
+      price: 2000,
+      farmer: "ဦးတင် (မှော်ဘီ)",
+      image:
+        "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=500&q=80",
+    },
+    {
+      id: "8",
+      name: "သီပေါ နာနတ်သီး",
+      price: 2500,
+      farmer: "နန်းမွေ (သီပေါ)",
+      image:
+        "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=500&q=80",
+    },
+    {
+      id: "9",
+      name: "ပြင်ဦးလွင် ပန်းသီး",
+      price: 4000,
+      farmer: "ဒေါ်မြ (ပြင်ဦးလွင်)",
+      image:
+        "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&q=80",
+    },
+  ];
+
+  useEffect(() => {
+    // Login အခြေအနေစစ်ဆေးခြင်း
+    const logged = localStorage.getItem("isLoggedIn") === "true";
+    const role = localStorage.getItem("userRole") || "";
+    setIsLoggedIn(logged);
+    setUserRole(role);
+
+    // Cart Count စစ်ဆေးခြင်း
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+  }, []);
+
+  const handleBuyClick = (fruit) => {
+    if (!isLoggedIn) {
+      alert("⚠️ ကုန်ပစ္စည်းဝယ်ယူရန် ဦးစွာ Login ဝင်ပေးပါဦး ခင်ဗျာ!");
+      router.push("/login");
+      return;
+    }
+
+    // Login ဝင်ထားပါက Cart ထဲထည့်ခြင်း
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const existingIndex = cart.findIndex((item) => item.id === fruit.id);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += 1;
+    } else {
+      cart.push({ ...fruit, quantity: 1 });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+    alert(`🎉 ${fruit.name} (၁) ပိဿာကို ခြင်းတောင်းထဲ ထည့်ပြီးပါပြီ!`);
+  };
+
+  
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userEmail");
+    setIsLoggedIn(false);
+    setUserRole("");
+    alert("အကောင့်မှ ထွက်ပြီးပါပြီ။");
+    router.push("/");
+  };
+
+  return (
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
+      {/* Header အပိုင်း */}
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "15px 0",
+          borderBottom: "1px solid #e2e8f0",
+          marginBottom: "30px",
+        }}
+      >
+        <h1 style={{ color: "#2e7d32", margin: 0 }}>ချိတ်ဆက်ဈေးကွက် 🥬</h1>
+
+        <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+          {/* ခြင်းတောင်းခလုတ် (ဝယ်ရင် အရေအတွက် တိုးပေးမည့်စနစ်) */}
+          <Link
+            href="/cart"
+            style={{
+              textDecoration: "none",
+              color: "#2e7d32",
+              fontWeight: "bold",
+              position: "relative",
+              border: "1px solid #2e7d32",
+              padding: "8px 16px",
+              borderRadius: "8px",
+            }}
+          >
+            🛒 ခြင်းတောင်း ({cartCount})
+          </Link>
+
+          {isLoggedIn ? (
+            <>
+              {userRole === "farmer" && (
+                <Link
+                  href="/dashboard"
+                  style={{
+                    textDecoration: "none",
+                    color: "#1e293b",
+                    fontWeight: "bold",
+                  }}
+                >
+                  🚜 Dashboard
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                style={{
+                  border: "1px solid #e53e3e",
+                  color: "#e53e3e",
+                  backgroundColor: "transparent",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Logout 🚪
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              style={{
+                textDecoration: "none",
+                backgroundColor: "#2e7d32",
+                color: "white",
+                padding: "8px 16px",
+                borderRadius: "8px",
+                fontWeight: "bold",
+              }}
+            >
+              Login ဝင်ရန်
+            </Link>
+          )}
+        </div>
+      </header>
+
+      <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <h2
+          style={{ fontSize: "2.2rem", color: "#1a202c", marginBottom: "10px" }}
+        >
+          Fresh Farm Fruits
+        </h2>
+        <p style={{ color: "#718096" }}>
+          လတ်ဆတ်သော ခြံထွက်အသီးအနှံများကို တိုက်ရိုက်ချိတ်ဆက် ဝယ်ယူပါ
+        </p>
+      </div>
+
+      {/* အသီးအနှံ (၉) မျိုး Card စာရင်း */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: "25px",
+        }}
+      >
+        {fruits.map((fruit) => (
+          <div
+            key={fruit.id}
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              overflow: "hidden",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+            }}
+          >
+            <img
+              src={fruit.image}
+              alt={fruit.name}
+              style={{ width: "100%", height: "200px", objectFit: "cover" }}
+            />
+            <div style={{ padding: "20px" }}>
+              <h3
+                style={{
+                  margin: "0 0 8px 0",
+                  fontSize: "1.2rem",
+                  color: "#2d3748",
+                }}
+              >
+                {fruit.name}
+              </h3>
+              <p
+                style={{
+                  margin: "0 0 12px 0",
+                  fontSize: "0.9rem",
+                  color: "#718096",
+                }}
+              >
+                တောင်သူ - {fruit.farmer}
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "15px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: "bold",
+                    color: "#e65100",
+                  }}
+                >
+                  {fruit.price} ကျပ် / ပိဿာ
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                {/* အသေးစိတ်ကြည့်ရန် ခလုတ် - Login မလိုဘဲ သွားလို့ရသည် */}
+                <Link
+                  href={`/products/${fruit.id} `}
+                  style={{
+                    flex: 1,
+                    textDecoration: "none",
+                    textAlign: "center",
+                    border: "1px solid #cbd5e0",
+                    color: "#4a5568",
+                    padding: "10px 0",
+                    borderRadius: "8px",
+                    fontWeight: "bold",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  အသေးစိတ်
+                </Link>
+                {/* ဝယ်ယူမည် ခလုတ် - Login စစ်သည် */}
+                <button
+                  onClick={() => handleBuyClick(fruit)}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#2e7d32",
+                    color: "white",
+                    border: "none",
+                    padding: "10px 0",
+                    borderRadius: "8px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  ဝယ်ယူမည်
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+//globals.customerAddress/* ကမ္ဘာလုံးဆိုင်ရာ သတ်မှတ်ချက်များ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7fafc;
+  color: #2d3748;
+  padding: 40px 20px;
+}
+
+/* Header အပိုင်း */
+header {
+  max-w: 1000px;
+  margin: 0 auto 40px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 20px;
+}
+
+header h1 {
+  color: #2e7d32;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+header div a {
+  text-decoration: none;
+  color: #4a5568;
+  margin-left: 20px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+header div a:hover {
+  color: #2e7d32;
+}
+
+header div a:last-child {
+  background-color: #2e7d32;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+header div a:last-child:hover {
+  background-color: #1b5e20;
+}
+
+/* Hero Section */
+.max-w-5xl.mx-auto.text-center {
+  max-width: 1000px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.max-w-5xl.mx-auto.text-center h2 {
+  font-size: 2.5rem;
+  color: #1a5235;
+  margin-bottom: 10px;
+}
+
+.max-w-5xl.mx-auto.text-center p {
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+/* Product Grid (၃ ကော်လံခွဲခြင်း) */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Product Card တစ်ခုချင်းစီ */
+.border.rounded-xl {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.border.rounded-xl:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* သစ်သီးပုံပြရန်နေရာ */
+.bg-green-50 {
+  background-color: #e8f5e9;
+  height: 160px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2e7d32;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* စာသားများနှင့် ဈေးနှုန်း */
+.text-green-800 {
+  color: #1b5e20;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+
+.text-gray-600 {
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.text-orange-600 {
+  color: #e65100;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 15px 0;
+}
+
+/* ခလုတ်များ (Flex alignment) */
+.flex.gap-2 {
+  display: flex;
+  gap: 12px;
+}
+
+.flex.gap-2 a,
+.flex.gap-2 button {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+/* အသေးစိတ်ကြည့်ရန် ခလုတ် */
+.flex.gap-2 a {
+  border: 2px solid #2e7d32;
+  color: #2e7d32;
+  background: transparent;
+}
+
+.flex.gap-2 a:hover {
+  background-color: #e8f5e9;
+}
+
+/* ဝယ်ယူမည် ခလုတ် */
+.flex.gap-2 button {
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+}
+
+.flex.gap-2 button:hover {
+  background-color: #1b5e20;
+}
+
+/* Farmer Dashboard သီးသန့် Layout ဆင်ခြင်း */
+.max-w-5xl {
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+/* ခေါင်းစဉ်ပိုင်း */
+.flex.justify-between.items-center {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Dashboard Grid ခွဲခြင်း (ဖောင်က တစ်ဖက်၊ စာရင်းက တစ်ဖက်) */
+.grid-cols-1.md\:grid-cols-3 {
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* ဖောင်ကို ၁ ဆ၊ စာရင်းကို ၂ ဆ နေရာပေးခြင်း */
+  gap: 30px;
+  align-items: start;
+}
+
+/* သီးနှံအသစ်တင်သည့် Form Box */
+.bg-white.p-6.rounded-2xl.border {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.bg-white.p-6.rounded-2xl.border h2 {
+  color: #2e7d32;
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e8f5e9;
+  padding-bottom: 10px;
+}
+
+/* Input ကွက်တိများကို လှပအောင် ပြင်ဆင်ခြင်း */
+.space-y-3 input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 15px; /* Input တစ်ခုချင်းစီကြား ခြားရန် */
+  transition: border-color 0.2s;
+  display: block;
+}
+
+.space-y-3 input:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+/* တင်သွင်းမည် ခလုတ် */
+.space-y-3 button {
+  width: 100%;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.space-y-3 button:hover {
+  background-color: #1b5e20;
+}
+
+/* ရောင်းချနေဆဲ သီးနှံများစာရင်း Box */
+.divide-y {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.py-3.flex.justify-between.items-center {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid #edf2f7;
+}
+
+.py-3.flex.justify-between.items-center span:first-child {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+/* Status Badge လေးများ (ပစ္စည်းရှိ/အရောင်းသွက်) */
+.text-xs.bg-green-100 {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.text-xs.bg-gray-100 {
+  background-color: #edf2f7;
+  color: #4a5568;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+/* Login Page Layout ပြင်ဆင်ခြင်း */
+.min-h-screen.flex.items-center.justify-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+}
+
+.max-w-md.w-full.bg-white {
+  background: white;
+  max-width: 420px;
+  width: 100%;
+  padding: 40px 30px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.max-w-md.w-full.bg-white h1 {
+  color: #1b5e20;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.max-w-md.w-full.bg-white p.text-center {
+  color: #718096;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Login Form Inputs */
+form.space-y-4 div {
+  margin-bottom: 20px;
+}
+
+form.space-y-4 label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+form.space-y-4 input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #cbd5e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+form.space-y-4 input:focus {
+  outline: none;
+  border-color: #2e7d32;
+}
+
+/* Login Button */
+form.space-y-4 button {
+  width: 100%;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+form.space-y-4 button:hover {
+  background-color: #1b5e20;
+}
+
+/* Product Card အတွင်း ပုံစတိုင်အသစ် */
+.fruit-img-box {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f7fafc;
+}
+
+.fruit-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+
